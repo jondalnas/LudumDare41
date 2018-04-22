@@ -31,16 +31,6 @@ public class BallController : MonoBehaviour {
 			
 			transform.position += new Vector3(dir.x, dir.y).normalized*0.15f;
 
-			if (enemyGoal.GetComponent<Collider2D>().OverlapPoint(transform.position)) {
-				Score.playerScore++;
-				TilemapHandler.reset();
-			}
-
-			if (ownGoal.GetComponent<Collider2D>().OverlapPoint(transform.position)) {
-				Score.enemyScore++;
-				TilemapHandler.reset();
-			}
-
 			if (dir.sqrMagnitude < 0.15f || (TilemapHandler.getTile(TilemapHandler.getTileAtPosition(transform.position)).containsCharacter() && startRoll != TilemapHandler.getTileAtPosition(transform.position))) {
 				updatePosition();
 				rolling = false;
@@ -52,6 +42,16 @@ public class BallController : MonoBehaviour {
 		TilemapHandler.clearBall();
 		tilePosition = TilemapHandler.getTileAtPosition(transform.position);
 		TilemapHandler.getTile(tilePosition).setHasBall(true);
+
+		if (enemyGoal.GetComponent<Collider2D>().OverlapPoint(transform.position)) {
+			Score.playerScore++;
+			TilemapHandler.reset();
+		}
+
+		if (ownGoal.GetComponent<Collider2D>().OverlapPoint(transform.position)) {
+			Score.enemyScore++;
+			TilemapHandler.reset();
+		}
 	}
 
 	public void kick() {

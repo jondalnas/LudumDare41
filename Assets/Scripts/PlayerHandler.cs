@@ -30,7 +30,7 @@ public class PlayerHandler : MonoBehaviour {
 
 		TileHandler onTile = TilemapHandler.getTile(tilePositionOrigin.x, tilePositionOrigin.y).GetComponent<TileHandler>();
 
-		if (onTile.getCharacter() != null) {
+		if (TilemapHandler.getTile(to).GetComponent<TileHandler>().getCharacter() != null) {
 			if ((to - tilePositionOrigin).y == 0) {
 				to += Vector2Int.right * (((to - tilePositionOrigin).x < 0) ? -1 : 1);
 			}
