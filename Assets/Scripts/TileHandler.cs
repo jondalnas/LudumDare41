@@ -14,6 +14,10 @@ public class TileHandler : MonoBehaviour {
 		return hasCharacter;
 	}
 
+	public bool containsPlayer() {
+		return hasCharacter && character.CompareTag("Player");
+	}
+
 	public void removeCharacter() {
 		character = null;
 		hasCharacter = false;

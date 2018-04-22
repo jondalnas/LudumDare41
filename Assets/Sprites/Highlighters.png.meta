@@ -1,12 +1,11 @@
 fileFormatVersion: 2
-guid: 932b5c970f543f24d9e1ae5eb51f37ff
-timeCreated: 1524299637
+guid: c741ee530c31bfe44a4928d58c98a06e
+timeCreated: 1524399673
 licenseType: Free
 TextureImporter:
   fileIDToRecycleName:
-    21300000: Grass
-    21300002: Cursor
-    21300004: Highlighter
+    21300000: Cursor
+    21300002: Highlighter
   externalObjects: {}
   serializedVersion: 4
   mipmaps:
@@ -103,7 +102,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Grass
+      name: Cursor
       rect:
         serializedVersion: 2
         x: 0
@@ -111,21 +110,7 @@ TextureImporter:
         width: 16
         height: 16
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: Cursor
-      rect:
-        serializedVersion: 2
-        x: 16
-        y: 0
-        width: 16
-        height: 16
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -134,7 +119,7 @@ TextureImporter:
       name: Highlighter
       rect:
         serializedVersion: 2
-        x: 32
+        x: 16
         y: 0
         width: 16
         height: 16

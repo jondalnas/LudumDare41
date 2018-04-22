@@ -15,36 +15,124 @@ public class PlayerHandler : MonoBehaviour {
 	public Tile[] tiles;
 
 	public Vector2Int tilePosition;
+	public Vector2Int tilePositionOrigin;
+	public Vector2Int tilePositionStart;
 
-	public void move(TilemapHandler tmh, Vector2Int to) {
-		if (tooFarAway(to)) return;
+	private bool turnEnded;
+	private Vector2Int targetTile;
+	private bool kicksBall;
+	public bool hasBall;
 
-		TileHandler onTile = tmh.getTile(tilePosition.x, tilePosition.y).GetComponent<TileHandler>();
+	public bool move(TilemapHandler tmh, Vector2Int to) {
+		if (tooFarAway(to)) return false;
+
+		kicksBall = false;
+
+		TileHandler onTile = TilemapHandler.getTile(tilePositionOrigin.x, tilePositionOrigin.y).GetComponent<TileHandler>();
+
+		if (onTile.getCharacter() != null) {
+			if ((to - tilePositionOrigin).y == 0) {
+				to += Vector2Int.right * (((to - tilePositionOrigin).x < 0) ? -1 : 1);
+			}
+			else {
+				to += Vector2Int.up * (((to - tilePositionOrigin).y < 0) ? -1 : 1);
+			}
+		}
 
 		tmh.moveCharacter(tilePosition, to);
 
-		if (onTile.getHasBall()) {
-			onTile.setHasBall(false);
-			tmh.getTile(to.x, to.y).GetComponent<TileHandler>().setHasBall(true);
+		if (hasBall = onTile.getHasBall()) {
+			GameObject.Find("Ball").GetComponent<BallController>().owner = transform;
 			GameObject.Find("Ball").transform.position = transform.position - new Vector3(0, 0.5f);
+		}
+
+		return true;
+	}
+
+	public void tryMove(TilemapHandler tmh, Vector2Int to) {
+		if (!move(tmh, to)) {
+			Vector2Int movement;
+
+			if (Mathf.Abs(to.x - tilePositionOrigin.x) > speed) movement = Vector2Int.right * speed * (to.x - tilePositionOrigin.x < 0 ? -1 : 1);
+			else movement = Vector2Int.right * (to.x - tilePositionOrigin.x);
+
+			movement.y = (speed - Mathf.Abs(to.x - tilePositionOrigin.x)) * (to.y - tilePositionOrigin.y < 0 ? -1 : 1);
+
+			move(tmh, tilePositionOrigin+movement);
 		}
 	}
 
 	public void kick(TilemapHandler tmh, Vector2Int to) {
-		if (outOfKickingRange(to)) return;
+		if (!TilemapHandler.getTile(tilePositionOrigin).getHasBall() || outOfKickingRange(to)) return;
 
 		BallController bc = GameObject.Find("Ball").GetComponent<BallController>();
-		tmh.getTile(tmh.getTileAtPosition(bc.transform.position).x, tmh.getTileAtPosition(bc.transform.position).y).setHasBall(false);
-		bc.transform.position = tmh.getTile(to.x, to.y).transform.position+new Vector3(0.5f, 0.5f);
-		bc.updatePosition();
+		bc.transform.position = TilemapHandler.getTile(to).transform.position+new Vector3(0.5f, 0.5f);
+
+		bc.destination = to;
+
+		kicksBall = true;
 	}
 
 	public bool tooFarAway(Vector2Int to) {
-		return Mathf.Abs((to - tilePosition).x) + Mathf.Abs((to - tilePosition).y) > speed;
+		return Mathf.Abs((to - tilePositionOrigin).x) + Mathf.Abs((to - tilePositionOrigin).y) > speed;
+	}
+
+	public int moveDistanceTo(Vector2Int to) {
+		return Mathf.Abs((to - tilePositionOrigin).x) + Mathf.Abs((to - tilePositionOrigin).y);
 	}
 
 	public bool outOfKickingRange(Vector2Int to) {
 		return (to - tilePosition).sqrMagnitude > kickLength*kickLength;
+	}
+
+	public void endTurn() {
+		if (tilePosition != tilePositionOrigin) transform.position = TilemapHandler.getTile(tilePositionOrigin).transform.position + new Vector3(0.5f, 1.1f);
+
+		if (TilemapHandler.getTile(tilePositionOrigin).GetComponent<TileHandler>().getHasBall() && (tilePosition != tilePositionOrigin || kicksBall)) {
+			if (!kicksBall) {
+				TilemapHandler.getTile(tilePosition).GetComponent<TileHandler>().setHasBall(true);
+			}
+
+			TilemapHandler.getTile(tilePositionOrigin).GetComponent<TileHandler>().setHasBall(false);
+
+			GameObject.Find("Ball").transform.position = transform.position - new Vector3(0, 0.5f);
+		}
+
+		tilePositionOrigin = tilePosition;
+		turnEnded = true;
+		targetTile = tilePosition;
+	}
+
+	void FixedUpdate() {
+		if (turnEnded) {
+			Vector3 dir = TilemapHandler.getTile(targetTile).transform.position-(transform.position-Vector3.up-new Vector3(0.5f, 0.1f));
+
+			Vector3 movement = Vector3.zero;
+
+			if ((dir.x * Vector3.right).sqrMagnitude > 0.02f) movement = Vector3.right * (dir.x < 0 ? -1 : 1) * 0.1f;
+			else if ((dir.y * Vector3.up).sqrMagnitude > 0.02f) movement = Vector3.up * (dir.y < 0 ? -1 : 1) * 0.1f;
+			else if (kicksBall) {
+				kicksBall = false;
+				GameObject.Find("Ball").GetComponent<BallController>().kick();
+			} else {
+				if (hasBall) GameObject.Find("Ball").GetComponent<BallController>().updatePosition();
+				turnEnded = false;
+			}
+			
+			transform.position += movement;
+
+			if (hasBall) GameObject.Find("Ball").transform.position += movement;
+			else if (TilemapHandler.getTile(TilemapHandler.getTileAtPosition(transform.position-Vector3.up*0.5f)).getHasBall()) {
+				hasBall = true;
+
+				TilemapHandler.getTile(TilemapHandler.getTileAtPosition(transform.position)).GetComponent<TileHandler>().setHasBall(false);
+				TilemapHandler.getTile(tilePosition).GetComponent<TileHandler>().setHasBall(true);
+			}
+		}
+	}
+
+	public bool isTurnEnded() {
+		return !turnEnded;
 	}
 
 	public void generateField() {
@@ -82,5 +170,15 @@ public class PlayerHandler : MonoBehaviour {
 		}
 
 		tm.CompressBounds();
+	}
+
+	public void reset() {
+		TilemapHandler.getTile(tilePositionOrigin).removeCharacter();
+		TilemapHandler.getTile(tilePositionStart).addCharacter(transform);
+		tilePosition = tilePositionOrigin = targetTile = tilePositionStart;
+		transform.position = TilemapHandler.getTile(tilePositionStart).transform.position + new Vector3(0.5f, 1.1f);
+		turnEnded = false;
+		kicksBall = false;
+		hasBall = false;
 	}
 }

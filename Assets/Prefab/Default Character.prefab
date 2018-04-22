@@ -39,7 +39,7 @@ GameObject:
   - component: {fileID: 114251535991551108}
   m_Layer: 0
   m_Name: Default Character
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -64,7 +64,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1740883499022374}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -11.027081, y: -9.485325, z: 0}
   m_LocalScale: {x: 6.25, y: 6.25, z: 1}
   m_Children:
   - {fileID: 4308308107266206}
@@ -100,7 +100,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 6
-  kickLength: 15
+  kickLength: 11
   kickAccuracy: 0.1
   highKickHeight: 5
   jumpHeight: 0.5
@@ -120,6 +120,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: db490a9ff8f98ae49aec829b8dea2ae1, type: 2}
   - {fileID: 11400000, guid: 4a69460701cc8c54e80b7baa8ffa1e29, type: 2}
   tilePosition: {x: 0, y: 0}
+  tilePositionOrigin: {x: 0, y: 0}
+  tilePositionStart: {x: 0, y: 0}
+  hasBall: 0
 --- !u!212 &212382495590815654
 SpriteRenderer:
   m_ObjectHideFlags: 1
@@ -154,7 +157,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300042, guid: c72d53d6592f7a343a8aed7d204ace8f, type: 3}
+  m_Sprite: {fileID: 21300126, guid: c72d53d6592f7a343a8aed7d204ace8f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

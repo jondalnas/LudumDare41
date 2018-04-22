@@ -16,6 +16,10 @@ public class Controller : MonoBehaviour {
 
 	private bool isKicking;
 
+	enum players { player, enemy }
+
+	players turn;
+
 	void Start () {
 		tmh = GameObject.Find("Grid").GetComponentInChildren<TilemapHandler>();
 		cursor = GameObject.Find("Cursor");
@@ -24,69 +28,153 @@ public class Controller : MonoBehaviour {
 	}
 
 	void Update () {
-		Vector3 tile = tmh.roundToTilePosition(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+		if (!TilemapHandler.hasTurnEnded()) return;
 
-		if (selectedTile == null)
-			cursor.transform.position = tile + new Vector3(0.5f, 0.5f);
-		else {
-			if (Input.GetButton("Kick")) {
-				br.SetActive(true);
-				ma.SetActive(false);
-				isKicking = true;
-			} else{
-				br.SetActive(false);
-				ma.SetActive(true);
-				isKicking = false;
+		if (turn == players.player) {
+			Vector3 tile = tmh.roundToTilePosition(Camera.main.ScreenToWorldPoint(Input.mousePosition));
 
-				generateArrow(tile - GameObject.Find("Playing Area").GetComponent<Tilemap>().origin);
-			}
-		}
-
-		if (Input.GetMouseButtonDown(0)) {
-			Vector2Int highlightedTile = tmh.getTileAtPosition(Camera.main.ScreenToWorldPoint(Input.mousePosition));
-			if (selectedTile == null) {
-				if (tmh.getTile(highlightedTile.x, highlightedTile.y).containsCharacter()) {
-					selectedTile = tmh.getTile(highlightedTile.x, highlightedTile.y);
-
-					selected.transform.position = selectedTile.transform.position + new Vector3(0.5f, 0.5f);
-					selected.SetActive(true);
+			if (selectedTile == null)
+				cursor.transform.position = tile + new Vector3(0.5f, 0.5f);
+			else {
+				if (Input.GetButton("Kick")) {
+					cursor.transform.position = tile + new Vector3(0.5f, 0.5f);
 
 					br.SetActive(true);
-					selectedTile.getCharacter().GetComponent<PlayerHandler>().generateField();
-					br.transform.position += br.GetComponent<Tilemap>().WorldToCell(selectedTile.getCharacter().transform.position)*new Vector3Int(1, 1, 0)-new Vector3Int(0, 1, 0);
+					ma.SetActive(false);
+					isKicking = true;
+				} else {
 					br.SetActive(false);
+					ma.SetActive(true);
+					isKicking = false;
+
+					generateArrow(tile - GameObject.Find("Playing Area").GetComponent<Tilemap>().origin);
 				}
-			} else if (!isKicking) {
-				if (selectedTile.tilemapPosition != highlightedTile) {
-					selectedTile.getCharacter().GetComponent<PlayerHandler>().move(tmh, highlightedTile);
-				}
+			}
+
+			if (Input.GetButtonDown("Next Round")) {
+				TilemapHandler.endTurn();
 
 				selectedTile = null;
 				ma.SetActive(false);
 				selected.SetActive(false);
 				br.GetComponent<Tilemap>().ClearAllTiles();
-			} else {
-				selectedTile.getCharacter().GetComponent<PlayerHandler>().kick(tmh, highlightedTile);
 
+				turn = players.enemy;
+			}
+
+			if (Input.GetMouseButtonDown(0)) {
+				Vector2Int highlightedTile = TilemapHandler.getTileAtPosition(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+				if (selectedTile == null) {
+					if (TilemapHandler.getTile(highlightedTile.x, highlightedTile.y).containsPlayer()) {
+						selectedTile = TilemapHandler.getTile(highlightedTile.x, highlightedTile.y);
+
+						selected.transform.position = selectedTile.transform.position + new Vector3(0.5f, 0.5f);
+						selected.SetActive(true);
+
+						br.SetActive(true);
+						selectedTile.getCharacter().GetComponent<PlayerHandler>().generateField();
+						br.transform.position += br.GetComponent<Tilemap>().WorldToCell(selectedTile.getCharacter().transform.position) * new Vector3Int(1, 1, 0) - new Vector3Int(0, 1, 0);
+						br.SetActive(false);
+					}
+				} else if (!isKicking) {
+					if (selectedTile.tilemapPosition != highlightedTile) {
+						selectedTile.getCharacter().GetComponent<PlayerHandler>().move(tmh, highlightedTile);
+					}
+
+					selectedTile = null;
+					ma.SetActive(false);
+					selected.SetActive(false);
+					br.GetComponent<Tilemap>().ClearAllTiles();
+				} else {
+					selectedTile.getCharacter().GetComponent<PlayerHandler>().kick(tmh, highlightedTile);
+
+					selectedTile = null;
+					ma.SetActive(false);
+					selected.SetActive(false);
+					br.GetComponent<Tilemap>().ClearAllTiles();
+				}
+			}
+
+			if (Input.GetMouseButtonDown(1)) {
 				selectedTile = null;
 				ma.SetActive(false);
 				selected.SetActive(false);
 				br.GetComponent<Tilemap>().ClearAllTiles();
 			}
-		}
+		} else {
+			List<Transform> enemies = new List<Transform>();
+			enemies.AddRange(TilemapHandler.enemies);
 
-		if (Input.GetMouseButtonDown(1)) {
-			selectedTile = null;
-			ma.SetActive(false);
-			selected.SetActive(false);
-			br.GetComponent<Tilemap>().ClearAllTiles();
+			Transform hasBall = null;
+
+			foreach (Transform enemy in enemies) {
+				PlayerHandler ph = enemy.GetComponent<PlayerHandler>();
+
+				if (TilemapHandler.getTile(ph.tilePosition).getHasBall()) {
+					hasBall = enemy;
+					enemies.Remove(enemy);
+					break;
+				}
+
+				Debug.Log(GameObject.Find("Ball").GetComponent<BallController>().tilePosition);
+
+				if (!ph.tooFarAway(GameObject.Find("Ball").GetComponent<BallController>().tilePosition)) {
+					ph.move(tmh, GameObject.Find("Ball").GetComponent<BallController>().tilePosition);
+					enemies.Remove(enemy);
+					break;
+				}
+			}
+
+			//Goal
+			enemies.Sort((p1, p2) => p2.GetComponent<PlayerHandler>().moveDistanceTo(new Vector2Int(7, 20)).CompareTo(p1.GetComponent<PlayerHandler>().moveDistanceTo(new Vector2Int(7, 20))));
+
+			enemies[enemies.Count - 1].GetComponent<PlayerHandler>().tryMove(tmh, new Vector2Int(7, 20));
+			enemies.Remove(enemies[enemies.Count - 1]);
+
+			//Right
+			enemies.Sort((p1, p2) => p2.GetComponent<PlayerHandler>().moveDistanceTo(new Vector2Int(12, 3)).CompareTo(p1.GetComponent<PlayerHandler>().moveDistanceTo(new Vector2Int(12, 3))));
+
+			enemies[enemies.Count - 1].GetComponent<PlayerHandler>().tryMove(tmh, new Vector2Int(12, 3));
+			enemies.Remove(enemies[enemies.Count - 1]);
+
+			//Left
+			enemies.Sort((p1, p2) => p2.GetComponent<PlayerHandler>().moveDistanceTo(new Vector2Int(2, 3)).CompareTo(p1.GetComponent<PlayerHandler>().moveDistanceTo(new Vector2Int(2, 3))));
+
+			enemies[enemies.Count - 1].GetComponent<PlayerHandler>().tryMove(tmh, new Vector2Int(2, 3));
+			enemies.Remove(enemies[enemies.Count - 1]);
+
+			//Middle
+			enemies.Sort((p1, p2) => p2.GetComponent<PlayerHandler>().moveDistanceTo(new Vector2Int(7, 3)).CompareTo(p1.GetComponent<PlayerHandler>().moveDistanceTo(new Vector2Int(7, 3))));
+
+			enemies[enemies.Count - 1].GetComponent<PlayerHandler>().tryMove(tmh, new Vector2Int(7, 3));
+			enemies.Remove(enemies[enemies.Count - 1]);
+
+			if (hasBall != null) {
+				enemies.Clear();
+				enemies.AddRange(TilemapHandler.enemies);
+				enemies.Remove(hasBall);
+				enemies.Sort((p1, p2) => p2.GetComponent<PlayerHandler>().moveDistanceTo(hasBall.GetComponent<PlayerHandler>().tilePosition).CompareTo(p1.GetComponent<PlayerHandler>().moveDistanceTo(hasBall.GetComponent<PlayerHandler>().tilePosition)));
+
+				foreach (Transform player in TilemapHandler.players) {
+					if ((player.GetComponent<PlayerHandler>().tilePosition - hasBall.GetComponent<PlayerHandler>().tilePosition).sqrMagnitude < 4) {
+						hasBall.GetComponent<PlayerHandler>().kick(tmh, enemies[enemies.Count - 1].GetComponent<PlayerHandler>().tilePosition);
+					}
+				}
+
+				if (!hasBall.GetComponent<PlayerHandler>().outOfKickingRange(new Vector2Int(7, 0))) {
+					hasBall.GetComponent<PlayerHandler>().kick(tmh, new Vector2Int(7, 0));
+				}
+			}
+
+			TilemapHandler.endEnemyTurn();
+			turn = players.player;
 		}
 	}
 
 	public void generateArrow(Vector3 end) {
 		ma.GetComponent<Tilemap>().ClearAllTiles();
 
-		Vector2Int curr = selectedTile.tilemapPosition;
+		Vector2Int curr = selectedTile.getCharacter().GetComponent<PlayerHandler>().tilePositionOrigin;
 		Vector2Int endPos = new Vector2Int((int) end.x, (int) end.y);
 
 		for (int dir = (curr - endPos).x; (dir = (curr - endPos).x) != 0 && (dir < 100 && dir > -100);) {
