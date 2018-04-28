@@ -23,6 +23,14 @@ public class PlayerHandler : MonoBehaviour {
 	private bool kicksBall;
 	public bool hasBall;
 
+	private Animator anim;
+	private enum animationState { UpDown, LeftRight, None};
+	private animationState state;
+
+	void Start() {
+		anim = GetComponentInChildren<Animator>();
+	}
+
 	public bool move(TilemapHandler tmh, Vector2Int to) {
 		if (tooFarAway(to)) return false;
 
@@ -102,6 +110,7 @@ public class PlayerHandler : MonoBehaviour {
 		turnEnded = true;
 		targetTile = tilePosition;
 	}
+	
 
 	void FixedUpdate() {
 		if (turnEnded) {
@@ -109,14 +118,33 @@ public class PlayerHandler : MonoBehaviour {
 
 			Vector3 movement = Vector3.zero;
 
-			if ((dir.x * Vector3.right).sqrMagnitude > 0.02f) movement = Vector3.right * (dir.x < 0 ? -1 : 1) * 0.1f;
-			else if ((dir.y * Vector3.up).sqrMagnitude > 0.02f) movement = Vector3.up * (dir.y < 0 ? -1 : 1) * 0.1f;
-			else if (kicksBall) {
+			if ((dir.x * Vector3.right).sqrMagnitude > 0.02f) {
+				movement = Vector3.right * (dir.x < 0 ? -1 : 1) * 0.1f;
+				anim.SetBool(dir.x < 0 ? "Left" : "Right", true);
+				if (state != animationState.LeftRight) {
+					anim.SetTrigger("Reset");
+					state = animationState.LeftRight;
+				}
+			} else if ((dir.y * Vector3.up).sqrMagnitude > 0.02f) {
+				movement = Vector3.up * (dir.y < 0 ? -1 : 1) * 0.1f;
+				anim.SetBool(dir.y < 0 ? "Down" : "Up", true);
+				anim.SetBool("Left", false);
+				anim.SetBool("Right", false);
+				if (state != animationState.UpDown) {
+					anim.SetTrigger("Reset");
+					state = animationState.UpDown;
+				}
+			} else if (kicksBall) {
 				kicksBall = false;
 				GameObject.Find("Ball").GetComponent<BallController>().kick();
 			} else {
 				if (hasBall) GameObject.Find("Ball").GetComponent<BallController>().updatePosition();
 				turnEnded = false;
+				anim.SetTrigger("Reset");
+				anim.SetBool("Left", false);
+				anim.SetBool("Right", false);
+				anim.SetBool("Up", false);
+				anim.SetBool("Down", false);
 			}
 			
 			transform.position += movement;
@@ -180,5 +208,10 @@ public class PlayerHandler : MonoBehaviour {
 		turnEnded = false;
 		kicksBall = false;
 		hasBall = false;
+		anim.SetTrigger("Reset");
+		anim.SetBool("Left", false);
+		anim.SetBool("Right", false);
+		anim.SetBool("Up", false);
+		anim.SetBool("Down", false);
 	}
 }

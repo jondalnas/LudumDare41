@@ -116,8 +116,6 @@ public class Controller : MonoBehaviour {
 					break;
 				}
 
-				Debug.Log(GameObject.Find("Ball").GetComponent<BallController>().tilePosition);
-
 				if (!ph.tooFarAway(GameObject.Find("Ball").GetComponent<BallController>().tilePosition)) {
 					ph.move(tmh, GameObject.Find("Ball").GetComponent<BallController>().tilePosition);
 					enemies.Remove(enemy);
